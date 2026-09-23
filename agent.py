@@ -12,6 +12,7 @@ Quickstart:
 import ast
 import operator
 import os
+import sys
 from datetime import datetime
 
 from dotenv import load_dotenv
@@ -120,6 +121,9 @@ DEMOS = [
 ]
 
 if __name__ == "__main__":
+    # Windows 控制台默认 GBK：模型输出可能包含 emoji 等字符，强制 UTF-8 输出避免崩编码
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     for q in DEMOS:
         print(f"\n=== USER: {q}")
         result = app.invoke({"messages": [("user", q)]})
