@@ -1,5 +1,7 @@
 # langgraph-tool-agent
 
+[![CI](https://github.com/shu0819-sjy/langgraph-tool-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/shu0819-sjy/langgraph-tool-agent/actions/workflows/ci.yml)
+
 A minimal **LangGraph** tool-calling agent that demonstrates **reliable tool-failure handling**:
 `tool failure -> bounded retry (1x) -> graceful fallback`.
 
