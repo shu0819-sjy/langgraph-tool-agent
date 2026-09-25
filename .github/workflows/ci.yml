@@ -39,7 +39,9 @@ jobs:
             ruff check --select E,F --ignore E501 agent.py
           fi
 
-      - name: Unit tests (when present)
+      - name: Unit tests (offline, no real LLM)
+        env:
+          OPENAI_API_KEY: sk-test-not-a-real-key
         run: |
           if [ -d tests ]; then
             python -m pytest -q
