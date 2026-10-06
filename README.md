@@ -21,11 +21,33 @@ transient upstream errors, silent timeouts. Handling them well is what makes an 
 
 ## Quickstart
 
-```bash
-pip install -r requirements.txt
-copy .env.example .env    # then fill in OPENAI_API_KEY (any OpenAI-compatible base URL works too)
-py -3 agent.py            # or: python agent.py
+Requires Python 3.11 or newer. Use a virtual environment so the LangGraph
+dependencies stay isolated from other projects.
+
+**Windows PowerShell**
+
+```powershell
+py -3.11 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+Copy-Item .env.example .env
+python agent.py
 ```
+
+**macOS / Linux**
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+cp .env.example .env
+python agent.py
+```
+
+Edit `.env` and set `OPENAI_API_KEY` before running the live demo. The optional
+`OPENAI_BASE_URL` selects an OpenAI-compatible endpoint and `OPENAI_MODEL`
+selects the model. `.env` is local-only and must not be committed. Importing
+`agent` and running the tests do not initialize an LLM or require a real key.
 
 Expected output (abridged):
 
@@ -51,6 +73,20 @@ The core is `run_tool_with_fallback()` in `agent.py`:
 3. if the retry also fails, return a fallback message as the tool result — the graph
    keeps running and the LLM can tell the user something useful instead of the
    whole invocation crashing
+
+## Offline tests
+
+The tests exercise the calculator, local weather failure injection and retry
+fallback without network access or model downloads. Run them on every platform:
+
+```bash
+python -m pytest
+python -m ruff check agent.py tests
+```
+
+The test suite uses a clearly fake key only for compatibility construction. It
+never sends a request. Importing `agent` without `OPENAI_API_KEY` is supported
+for local-tool usage and offline tests.
 
 ## License
 

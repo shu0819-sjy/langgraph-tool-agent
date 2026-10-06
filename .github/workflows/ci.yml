@@ -14,12 +14,13 @@ concurrency:
 
 jobs:
   smoke:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.11", "3.12"]
+        os: [windows-latest, macos-latest, ubuntu-latest]
+        python-version: ["3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
 
@@ -37,19 +38,9 @@ jobs:
         run: python -m py_compile agent.py
 
       - name: Ruff lint (E/F only — keep teaching shape)
-        run: |
-          if [ -d tests ]; then
-            ruff check --select E,F --ignore E501 agent.py tests
-          else
-            ruff check --select E,F --ignore E501 agent.py
-          fi
+        run: python -m ruff check agent.py tests
 
       - name: Unit tests (offline, no real LLM)
         env:
           OPENAI_API_KEY: sk-test-not-a-real-key
-        run: |
-          if [ -d tests ]; then
-            python -m pytest -q
-          else
-            echo "tests/ not present yet — syntax + ruff gates only"
-          fi
+        run: python -m pytest

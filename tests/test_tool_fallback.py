@@ -9,6 +9,9 @@ then exercise only the local tool helpers — the core lesson of this repo.
 from __future__ import annotations
 
 import os
+import subprocess
+import sys
+from pathlib import Path
 
 import pytest
 
@@ -76,6 +79,34 @@ def test_fallback_keeps_graph_contract_as_string():
 def test_calculator_via_fallback_wrapper_no_retry_needed():
     """Happy path: success on first attempt, no fallback text."""
     assert agent.run_tool_with_fallback("calculator", {"expression": "1+1"}) == "2"
+
+
+def test_weather_stateCanBeResetBetweenIndependentRuns():
+    """验证独立演示运行可重置瞬时故障状态，避免跨运行共享重试计数。"""
+    agent.reset_weather_state()
+    with pytest.raises(RuntimeError, match="simulated transient"):
+        agent.mock_weather("Tokyo")
+    agent.reset_weather_state()
+    with pytest.raises(RuntimeError, match="simulated transient"):
+        agent.mock_weather("Tokyo")
+
+
+def test_importDoesNotRequireApiKey():
+    """验证仅导入本地工具不会初始化 LLM，也不会要求真实 API key。"""
+    environment = os.environ.copy()
+    environment.pop("OPENAI_API_KEY", None)
+    environment.pop("OPENAI_BASE_URL", None)
+    environment.pop("OPENAI_MODEL", None)
+    result = subprocess.run(
+        [sys.executable, "-c", "import agent; print('import-ok')"],
+        cwd=Path(__file__).resolve().parents[1],
+        env=environment,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.strip() == "import-ok"
 
 
 def test_unknown_tool_name_falls_back():

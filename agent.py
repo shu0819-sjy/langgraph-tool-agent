@@ -57,6 +57,11 @@ _WEATHER = {"Tokyo": "Sunny, 24C", "Singapore": "Rainy, 29C", "London": "Cloudy,
 # 重试成功；这样每次运行都能看到完整的 failure -> retry -> success 链路。
 _weather_calls = []
 
+
+def reset_weather_state() -> None:
+    """重置演示天气工具的调用状态，隔离多次独立运行的瞬时故障注入。"""
+    _weather_calls.clear()
+
 def mock_weather(city: str) -> str:
     """Look up weather for a demo city. First call simulates a transient failure;
     unknown cities always fail (demonstrates the graceful fallback path)."""
@@ -93,12 +98,20 @@ def call_tools(state: MessagesState):
 
 # ---------- 3. 模型节点 + 路由 ----------
 
-llm = ChatOpenAI(model=MODEL, temperature=0, base_url=BASE_URL).bind_tools(
-    list(TOOLS.values())
-)
+_llm = None
+
+
+def get_llm():
+    """按需创建绑定工具的 LLM，导入本地工具和离线测试不需要 API key。"""
+    global _llm
+    if _llm is None:
+        _llm = ChatOpenAI(model=MODEL, temperature=0, base_url=BASE_URL).bind_tools(
+            list(TOOLS.values())
+        )
+    return _llm
 
 def call_model(state: MessagesState):
-    return {"messages": [llm.invoke(state["messages"])]}
+    return {"messages": [get_llm().invoke(state["messages"])]}
 
 def route(state: MessagesState):
     return "tools" if state["messages"][-1].tool_calls else END
@@ -125,6 +138,7 @@ if __name__ == "__main__":
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     for q in DEMOS:
+        reset_weather_state()
         print(f"\n=== USER: {q}")
         result = app.invoke({"messages": [("user", q)]})
         for m in result["messages"]:
